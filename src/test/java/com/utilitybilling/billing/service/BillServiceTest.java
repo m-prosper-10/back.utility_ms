@@ -18,7 +18,6 @@ import com.utilitybilling.common.exception.BadRequestException;
 import com.utilitybilling.customer.entity.Customer;
 import com.utilitybilling.customer.repository.CustomerRepository;
 import com.utilitybilling.meter.entity.Meter;
-import com.utilitybilling.notification.service.NotificationService;
 import com.utilitybilling.reading.entity.MeterReading;
 import com.utilitybilling.reading.repository.MeterReadingRepository;
 import com.utilitybilling.tariff.entity.Tariff;
@@ -52,9 +51,6 @@ class BillServiceTest {
 
     @Mock
     private TariffService tariffService;
-
-    @Mock
-    private NotificationService notificationService;
 
     @InjectMocks
     private BillService billService;

@@ -11,7 +11,6 @@ import com.utilitybilling.common.exception.BadRequestException;
 import com.utilitybilling.common.exception.NotFoundException;
 import com.utilitybilling.customer.entity.Customer;
 import com.utilitybilling.customer.repository.CustomerRepository;
-import com.utilitybilling.notification.service.NotificationService;
 import com.utilitybilling.reading.entity.MeterReading;
 import com.utilitybilling.reading.repository.MeterReadingRepository;
 import com.utilitybilling.tariff.entity.Tariff;
@@ -43,7 +42,6 @@ public class BillService {
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
     private final TariffService tariffService;
-    private final NotificationService notificationService;
 
     @Transactional
     public BillResponse generateBill(BillRequest request) {
@@ -89,9 +87,7 @@ public class BillService {
         bill.setStatus(BillStatus.GENERATED);
         bill.setDueDate(request.dueDate());
 
-        Bill savedBill = billRepository.save(bill);
-        notificationService.createBillProcessedNotification(savedBill);
-        return toResponse(savedBill);
+        return toResponse(billRepository.save(bill));
     }
 
     @Transactional(readOnly = true)

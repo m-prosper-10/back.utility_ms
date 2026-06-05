@@ -2,8 +2,6 @@ package com.utilitybilling.payment.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.utilitybilling.billing.entity.Bill;
@@ -13,7 +11,6 @@ import com.utilitybilling.common.enums.PaymentMethod;
 import com.utilitybilling.common.exception.BadRequestException;
 import com.utilitybilling.customer.entity.Customer;
 import com.utilitybilling.customer.repository.CustomerRepository;
-import com.utilitybilling.notification.service.NotificationService;
 import com.utilitybilling.payment.dto.PaymentRequest;
 import com.utilitybilling.payment.dto.PaymentResponse;
 import com.utilitybilling.payment.entity.Payment;
@@ -38,9 +35,6 @@ class PaymentServiceTest {
 
     @Mock
     private CustomerRepository customerRepository;
-
-    @Mock
-    private NotificationService notificationService;
 
     @InjectMocks
     private PaymentService paymentService;
@@ -82,7 +76,6 @@ class PaymentServiceTest {
         assertEquals(BillStatus.PAID, bill.getStatus());
         assertEquals(BigDecimal.ZERO.setScale(2), bill.getOutstandingBalance());
         assertEquals(BigDecimal.valueOf(18880.00).setScale(2), response.amountPaid());
-        verify(notificationService).createFullPaymentNotification(bill);
     }
 
     @Test
@@ -106,7 +99,6 @@ class PaymentServiceTest {
 
         assertEquals(BillStatus.PARTIALLY_PAID, bill.getStatus());
         assertEquals(BigDecimal.valueOf(13880.00).setScale(2), bill.getOutstandingBalance());
-        verify(notificationService, never()).createFullPaymentNotification(bill);
     }
 
     private Bill buildBill() {
