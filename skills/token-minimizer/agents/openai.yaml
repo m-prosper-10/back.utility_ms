@@ -1,0 +1,4 @@
+interface:
+  display_name: "Token Minimizer"
+  short_description: "Keep outputs terse and efficient."
+  default_prompt: "Use this skill when the user asks for minimal token usage or terse agent behavior."
