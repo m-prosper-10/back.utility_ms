@@ -15,6 +15,7 @@ import com.utilitybilling.payment.dto.PaymentRequest;
 import com.utilitybilling.payment.dto.PaymentResponse;
 import com.utilitybilling.payment.entity.Payment;
 import com.utilitybilling.payment.repository.PaymentRepository;
+import com.utilitybilling.user.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -35,6 +36,9 @@ class PaymentServiceTest {
 
     @Mock
     private CustomerRepository customerRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private PaymentService paymentService;

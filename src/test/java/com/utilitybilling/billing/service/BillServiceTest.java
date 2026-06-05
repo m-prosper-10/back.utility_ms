@@ -37,6 +37,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class BillServiceTest {
 
+    private static final LocalDate FUTURE_DUE_DATE = LocalDate.now().plusDays(30);
+
     @Mock
     private BillRepository billRepository;
 
@@ -61,7 +63,7 @@ class BillServiceTest {
         when(meterReadingRepository.findById(1L)).thenReturn(Optional.of(reading));
         when(billRepository.existsByReading(reading)).thenReturn(true);
 
-        BillRequest request = new BillRequest(1L, LocalDate.of(2026, 6, 30));
+        BillRequest request = new BillRequest(1L, FUTURE_DUE_DATE);
 
         assertThrows(BadRequestException.class, () -> billService.generateBill(request));
     }
@@ -82,7 +84,7 @@ class BillServiceTest {
             return bill;
         });
 
-        BillResponse response = billService.generateBill(new BillRequest(1L, LocalDate.of(2026, 6, 30)));
+        BillResponse response = billService.generateBill(new BillRequest(1L, FUTURE_DUE_DATE));
 
         assertEquals(BigDecimal.valueOf(15000.00).setScale(2), response.amountBeforeTax());
         assertEquals(BigDecimal.valueOf(2880.00).setScale(2), response.taxAmount());
@@ -105,7 +107,7 @@ class BillServiceTest {
             return bill;
         });
 
-        BillResponse response = billService.generateBill(new BillRequest(1L, LocalDate.of(2026, 6, 30)));
+        BillResponse response = billService.generateBill(new BillRequest(1L, FUTURE_DUE_DATE));
 
         assertEquals(BigDecimal.valueOf(6000.00).setScale(2), response.amountBeforeTax());
         assertEquals(BigDecimal.valueOf(1260.00).setScale(2), response.taxAmount());

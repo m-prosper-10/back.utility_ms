@@ -6,9 +6,10 @@ import static org.mockito.Mockito.when;
 
 import com.utilitybilling.billing.entity.Bill;
 import com.utilitybilling.customer.entity.Customer;
+import com.utilitybilling.customer.repository.CustomerRepository;
 import com.utilitybilling.notification.entity.Notification;
 import com.utilitybilling.notification.repository.NotificationRepository;
-import com.utilitybilling.customer.repository.CustomerRepository;
+import com.utilitybilling.user.repository.UserRepository;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +25,9 @@ class NotificationServiceTest {
 
     @Mock
     private CustomerRepository customerRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private NotificationService notificationService;
