@@ -2,6 +2,7 @@ package com.utilitybilling.user.entity;
 
 import com.utilitybilling.common.entity.AuditableEntity;
 import com.utilitybilling.common.enums.AccountStatus;
+import com.utilitybilling.customer.entity.Customer;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.Collection;
 import java.util.HashSet;
@@ -56,6 +58,10 @@ public class User extends AuditableEntity implements UserDetails {
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
+    @OneToOne
+    @JoinColumn(name = "customer_id", unique = true)
+    private Customer customer;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
