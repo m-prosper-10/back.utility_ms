@@ -48,6 +48,10 @@ public class BillService {
         MeterReading reading = meterReadingRepository.findById(request.readingId())
             .orElseThrow(() -> new NotFoundException("Reading not found"));
 
+        if (request.dueDate().isBefore(reading.getReadingDate())) {
+            throw new BadRequestException("Due date cannot be before the reading date");
+        }
+
         if (billRepository.existsByReading(reading)) {
             throw new BadRequestException("Bill has already been generated for this reading");
         }

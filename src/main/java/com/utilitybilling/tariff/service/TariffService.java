@@ -13,6 +13,7 @@ import com.utilitybilling.tariff.entity.Tariff;
 import com.utilitybilling.tariff.entity.TariffTier;
 import com.utilitybilling.tariff.repository.TariffRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -34,10 +35,10 @@ public class TariffService {
         tariff.setMeterType(request.meterType());
         tariff.setTariffType(request.tariffType());
         tariff.setVersion(nextVersion(request.meterType()));
-        tariff.setRatePerUnit(request.tariffType() == TariffType.FLAT ? request.ratePerUnit() : null);
-        tariff.setFixedCharge(request.fixedCharge());
-        tariff.setVatPercentage(request.vatPercentage());
-        tariff.setPenaltyPercentage(request.penaltyPercentage());
+        tariff.setRatePerUnit(request.tariffType() == TariffType.FLAT ? scale(request.ratePerUnit()) : null);
+        tariff.setFixedCharge(scale(request.fixedCharge()));
+        tariff.setVatPercentage(scalePercentage(request.vatPercentage()));
+        tariff.setPenaltyPercentage(scalePercentage(request.penaltyPercentage()));
         tariff.setEffectiveFrom(request.effectiveFrom());
         tariff.setEffectiveTo(request.effectiveTo());
         tariff.setStatus(TariffStatus.ACTIVE);
@@ -143,11 +144,19 @@ public class TariffService {
         for (TariffTierRequest tierRequest : sortedTiers) {
             TariffTier tier = new TariffTier();
             tier.setTariff(tariff);
-            tier.setMinUnits(tierRequest.minUnits());
-            tier.setMaxUnits(tierRequest.maxUnits());
-            tier.setRatePerUnit(tierRequest.ratePerUnit());
+            tier.setMinUnits(scale(tierRequest.minUnits()));
+            tier.setMaxUnits(tierRequest.maxUnits() == null ? null : scale(tierRequest.maxUnits()));
+            tier.setRatePerUnit(scale(tierRequest.ratePerUnit()));
             tariff.getTiers().add(tier);
         }
+    }
+
+    private BigDecimal scale(BigDecimal value) {
+        return value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal scalePercentage(BigDecimal value) {
+        return value.setScale(2, RoundingMode.HALF_UP);
     }
 
     private int nextVersion(MeterType meterType) {

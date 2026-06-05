@@ -15,6 +15,7 @@ import com.utilitybilling.user.entity.User;
 import com.utilitybilling.user.repository.UserRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -49,6 +50,11 @@ public class PaymentService {
 
         if (amountPaid.compareTo(bill.getOutstandingBalance()) > 0) {
             throw new BadRequestException("Payment exceeds outstanding balance");
+        }
+
+        LocalDate billCreationDate = bill.getCreatedAt().toLocalDate();
+        if (request.paymentDate().isBefore(billCreationDate)) {
+            throw new BadRequestException("Payment date cannot be before the bill creation date");
         }
 
         Payment payment = new Payment();

@@ -10,6 +10,8 @@ import com.utilitybilling.reading.dto.ReadingResponse;
 import com.utilitybilling.reading.entity.MeterReading;
 import com.utilitybilling.reading.repository.MeterReadingRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.YearMonth;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,12 +27,16 @@ public class ReadingService {
     @Transactional
     public ReadingResponse captureReading(ReadingRequest request) {
         Meter meter = findMeter(request.meterId());
+        validateBillingCycle(request);
 
         if (meter.getStatus() != MeterStatus.ACTIVE) {
             throw new BadRequestException("Inactive meter cannot receive readings");
         }
 
-        if (request.currentReading().compareTo(request.previousReading()) <= 0) {
+        BigDecimal previousReading = scale(request.previousReading());
+        BigDecimal currentReading = scale(request.currentReading());
+
+        if (currentReading.compareTo(previousReading) <= 0) {
             throw new BadRequestException("Current reading must be greater than previous reading");
         }
 
@@ -45,9 +51,9 @@ public class ReadingService {
 
         MeterReading reading = new MeterReading();
         reading.setMeter(meter);
-        reading.setPreviousReading(request.previousReading());
-        reading.setCurrentReading(request.currentReading());
-        reading.setConsumption(request.currentReading().subtract(request.previousReading()));
+        reading.setPreviousReading(previousReading);
+        reading.setCurrentReading(currentReading);
+        reading.setConsumption(scale(currentReading.subtract(previousReading)));
         reading.setReadingDate(request.readingDate());
         reading.setBillingMonth(request.billingMonth());
         reading.setBillingYear(request.billingYear());
@@ -83,6 +89,18 @@ public class ReadingService {
     private Meter findMeter(Long id) {
         return meterRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("Meter not found"));
+    }
+
+    private void validateBillingCycle(ReadingRequest request) {
+        YearMonth readingMonth = YearMonth.from(request.readingDate());
+        YearMonth billingMonth = YearMonth.of(request.billingYear(), request.billingMonth());
+        if (!readingMonth.equals(billingMonth)) {
+            throw new BadRequestException("Reading date must match the provided billing month and year");
+        }
+    }
+
+    private BigDecimal scale(BigDecimal value) {
+        return value.setScale(2, RoundingMode.HALF_UP);
     }
 
     private ReadingResponse toResponse(MeterReading reading) {
