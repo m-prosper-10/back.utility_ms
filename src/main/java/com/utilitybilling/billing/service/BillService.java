@@ -62,8 +62,8 @@ public class BillService {
 
         BigDecimal amountBeforeTax = calculateAmountBeforeTax(reading.getConsumption(), tariff);
         BigDecimal fixedCharge = scale(tariff.getFixedCharge());
-        BigDecimal penaltyAmount = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         BigDecimal subtotal = amountBeforeTax.add(fixedCharge);
+        BigDecimal penaltyAmount = calculatePenaltyAmount(subtotal, tariff, request.dueDate());
         BigDecimal taxAmount = scale(
             subtotal.multiply(tariff.getVatPercentage()).divide(HUNDRED, 2, RoundingMode.HALF_UP)
         );
@@ -112,6 +112,15 @@ public class BillService {
     public List<BillResponse> getBillsByCustomer(Long customerId) {
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new NotFoundException("Customer not found"));
+        return billRepository.findByCustomer(customer).stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BillResponse> getBillsForCurrentCustomer() {
+        Customer customer = currentUser().getCustomer();
+        if (customer == null) {
+            throw new BadRequestException("Current user is not linked to a customer");
+        }
         return billRepository.findByCustomer(customer).stream().map(this::toResponse).toList();
     }
 
@@ -166,6 +175,15 @@ public class BillService {
         }
 
         return scale(total);
+    }
+
+    private BigDecimal calculatePenaltyAmount(BigDecimal subtotal, Tariff tariff, LocalDate dueDate) {
+        if (!dueDate.isBefore(LocalDate.now())) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+        return scale(
+            subtotal.multiply(tariff.getPenaltyPercentage()).divide(HUNDRED, 2, RoundingMode.HALF_UP)
+        );
     }
 
     private String generateBillReference(MeterReading reading) {

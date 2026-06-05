@@ -62,4 +62,15 @@ public class PaymentController {
             )
         );
     }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/api/customer/payments")
+    public ResponseEntity<ApiResponse<List<PaymentResponse>>> getCurrentCustomerPayments() {
+        return ResponseEntity.ok(
+            ApiResponse.success(
+                "Customer payments retrieved successfully",
+                paymentService.getPaymentsForCurrentCustomer()
+            )
+        );
+    }
 }

@@ -73,6 +73,14 @@ public class BillController {
         );
     }
 
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/api/customer/bills")
+    public ResponseEntity<ApiResponse<List<BillResponse>>> getCurrentCustomerBills() {
+        return ResponseEntity.ok(
+            ApiResponse.success("Customer bills retrieved successfully", billService.getBillsForCurrentCustomer())
+        );
+    }
+
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE')")
     @PostMapping("/api/bills/{id}/approve")
     public ResponseEntity<ApiResponse<BillResponse>> approveBill(@PathVariable Long id) {
