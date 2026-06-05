@@ -29,7 +29,7 @@ public class NotificationController {
         );
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE', 'CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE')")
     @GetMapping("/api/customers/{customerId}/notifications")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getNotificationsByCustomer(
         @PathVariable Long customerId
@@ -38,6 +38,17 @@ public class NotificationController {
             ApiResponse.success(
                 "Customer notifications retrieved successfully",
                 notificationService.getNotificationsByCustomer(customerId)
+            )
+        );
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/api/customer/notifications")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getCurrentCustomerNotifications() {
+        return ResponseEntity.ok(
+            ApiResponse.success(
+                "Customer notifications retrieved successfully",
+                notificationService.getNotificationsForCurrentCustomer()
             )
         );
     }

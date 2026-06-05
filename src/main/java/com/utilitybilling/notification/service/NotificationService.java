@@ -8,10 +8,13 @@ import com.utilitybilling.customer.repository.CustomerRepository;
 import com.utilitybilling.notification.dto.NotificationResponse;
 import com.utilitybilling.notification.entity.Notification;
 import com.utilitybilling.notification.repository.NotificationRepository;
+import com.utilitybilling.user.entity.User;
+import com.utilitybilling.user.repository.UserRepository;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +24,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final CustomerRepository customerRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public Notification createBillProcessedNotification(Bill bill) {
@@ -58,6 +62,15 @@ public class NotificationService {
         return notificationRepository.findByCustomer(customer).stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<NotificationResponse> getNotificationsForCurrentCustomer() {
+        Customer customer = currentUser().getCustomer();
+        if (customer == null) {
+            throw new NotFoundException("Current user is not linked to a customer");
+        }
+        return notificationRepository.findByCustomer(customer).stream().map(this::toResponse).toList();
+    }
+
     @Transactional
     public NotificationResponse markSent(Long id) {
         Notification notification = notificationRepository.findById(id)
@@ -77,6 +90,12 @@ public class NotificationService {
 
     private String formatAmount(BigDecimal amount) {
         return new DecimalFormat("0.##").format(amount);
+    }
+
+    private User currentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(username)
+            .orElseThrow(() -> new NotFoundException("Current user not found"));
     }
 
     private NotificationResponse toResponse(Notification notification) {
