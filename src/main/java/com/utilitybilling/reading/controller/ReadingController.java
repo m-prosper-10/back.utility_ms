@@ -57,7 +57,7 @@ public class ReadingController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR', 'FINANCE')")
-    @GetMapping("/meter/{meterId}")
+    @GetMapping("/api/meters/{meterId}/readings")
     public ResponseEntity<ApiResponse<List<ReadingResponse>>> getReadingsByMeter(
         @PathVariable Long meterId
     ) {

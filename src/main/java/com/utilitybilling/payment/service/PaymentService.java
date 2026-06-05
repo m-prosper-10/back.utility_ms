@@ -11,10 +11,13 @@ import com.utilitybilling.payment.dto.PaymentRequest;
 import com.utilitybilling.payment.dto.PaymentResponse;
 import com.utilitybilling.payment.entity.Payment;
 import com.utilitybilling.payment.repository.PaymentRepository;
+import com.utilitybilling.user.entity.User;
+import com.utilitybilling.user.repository.UserRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final BillRepository billRepository;
     private final CustomerRepository customerRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public PaymentResponse recordPayment(PaymentRequest request) {
@@ -87,6 +91,21 @@ public class PaymentService {
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new NotFoundException("Customer not found"));
         return paymentRepository.findByCustomer(customer).stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentResponse> getPaymentsForCurrentCustomer() {
+        Customer customer = currentUser().getCustomer();
+        if (customer == null) {
+            throw new BadRequestException("Current user is not linked to a customer");
+        }
+        return paymentRepository.findByCustomer(customer).stream().map(this::toResponse).toList();
+    }
+
+    private User currentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(username)
+            .orElseThrow(() -> new NotFoundException("Current user not found"));
     }
 
     private PaymentResponse toResponse(Payment payment) {
