@@ -19,6 +19,7 @@ import com.utilitybilling.common.exception.BadRequestException;
 import com.utilitybilling.customer.entity.Customer;
 import com.utilitybilling.customer.repository.CustomerRepository;
 import com.utilitybilling.notification.service.EmailNotificationService;
+import com.utilitybilling.notification.service.NotificationService;
 import com.utilitybilling.meter.entity.Meter;
 import com.utilitybilling.reading.entity.MeterReading;
 import com.utilitybilling.reading.repository.MeterReadingRepository;
@@ -59,6 +60,9 @@ class BillServiceTest {
     @Mock
     private EmailNotificationService emailNotificationService;
 
+    @Mock
+    private NotificationService notificationService;
+
     @InjectMocks
     private BillService billService;
 
@@ -83,6 +87,11 @@ class BillServiceTest {
         when(tariffService.findApplicableTariffEntity(MeterType.WATER, LocalDate.of(2026, 6, 1)))
             .thenReturn(tariff);
         when(billRepository.existsByBillReference(org.mockito.ArgumentMatchers.anyString())).thenReturn(false);
+        when(billRepository.saveAndFlush(any(Bill.class))).thenAnswer(invocation -> {
+            Bill bill = invocation.getArgument(0);
+            bill.setId(1L);
+            return bill;
+        });
         when(billRepository.save(any(Bill.class))).thenAnswer(invocation -> {
             Bill bill = invocation.getArgument(0);
             bill.setId(1L);
@@ -95,6 +104,7 @@ class BillServiceTest {
         assertEquals(BigDecimal.valueOf(2880.00).setScale(2), response.taxAmount());
         assertEquals(BigDecimal.valueOf(18880.00).setScale(2), response.totalAmount());
         verify(emailNotificationService).sendBillProcessedEmail(any(Bill.class));
+        verify(notificationService).ensureBillProcessedNotificationExists(any(Bill.class));
     }
 
     @Test
@@ -107,6 +117,11 @@ class BillServiceTest {
         when(tariffService.findApplicableTariffEntity(MeterType.WATER, LocalDate.of(2026, 6, 1)))
             .thenReturn(tariff);
         when(billRepository.existsByBillReference(org.mockito.ArgumentMatchers.anyString())).thenReturn(false);
+        when(billRepository.saveAndFlush(any(Bill.class))).thenAnswer(invocation -> {
+            Bill bill = invocation.getArgument(0);
+            bill.setId(2L);
+            return bill;
+        });
         when(billRepository.save(any(Bill.class))).thenAnswer(invocation -> {
             Bill bill = invocation.getArgument(0);
             bill.setId(2L);
@@ -119,6 +134,7 @@ class BillServiceTest {
         assertEquals(BigDecimal.valueOf(1260.00).setScale(2), response.taxAmount());
         assertEquals(BigDecimal.valueOf(8260.00).setScale(2), response.totalAmount());
         verify(emailNotificationService).sendBillProcessedEmail(any(Bill.class));
+        verify(notificationService).ensureBillProcessedNotificationExists(any(Bill.class));
     }
 
     private MeterReading buildReading(BigDecimal consumption, AccountStatus customerStatus) {

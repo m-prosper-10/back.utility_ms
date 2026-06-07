@@ -15,6 +15,7 @@ import com.utilitybilling.common.exception.BadRequestException;
 import com.utilitybilling.customer.entity.Customer;
 import com.utilitybilling.customer.repository.CustomerRepository;
 import com.utilitybilling.notification.service.EmailNotificationService;
+import com.utilitybilling.notification.service.NotificationService;
 import com.utilitybilling.payment.dto.PaymentRequest;
 import com.utilitybilling.payment.dto.PaymentResponse;
 import com.utilitybilling.payment.entity.Payment;
@@ -48,6 +49,9 @@ class PaymentServiceTest {
     @Mock
     private EmailNotificationService emailNotificationService;
 
+    @Mock
+    private NotificationService notificationService;
+
     @InjectMocks
     private PaymentService paymentService;
 
@@ -70,6 +74,7 @@ class PaymentServiceTest {
     void recordPaymentMarksBillPaidAndCreatesNotification() {
         Bill bill = buildBill();
         when(billRepository.findByBillReference("BILL-2026-06-0001")).thenReturn(Optional.of(bill));
+        when(billRepository.saveAndFlush(bill)).thenReturn(bill);
         when(paymentRepository.save(org.mockito.ArgumentMatchers.any(Payment.class))).thenAnswer(invocation -> {
             Payment payment = invocation.getArgument(0);
             payment.setId(1L);
@@ -89,12 +94,14 @@ class PaymentServiceTest {
         assertEquals(BigDecimal.ZERO.setScale(2), bill.getOutstandingBalance());
         assertEquals(BigDecimal.valueOf(18880.00).setScale(2), response.amountPaid());
         verify(emailNotificationService).sendFullPaymentEmail(bill);
+        verify(notificationService).ensureFullPaymentNotificationExists(bill);
     }
 
     @Test
     void recordPaymentMarksBillPartialWithoutNotification() {
         Bill bill = buildBill();
         when(billRepository.findByBillReference("BILL-2026-06-0001")).thenReturn(Optional.of(bill));
+        when(billRepository.saveAndFlush(bill)).thenReturn(bill);
         when(paymentRepository.save(org.mockito.ArgumentMatchers.any(Payment.class))).thenAnswer(invocation -> {
             Payment payment = invocation.getArgument(0);
             payment.setId(2L);
@@ -113,6 +120,7 @@ class PaymentServiceTest {
         assertEquals(BillStatus.PARTIALLY_PAID, bill.getStatus());
         assertEquals(BigDecimal.valueOf(13880.00).setScale(2), bill.getOutstandingBalance());
         verify(emailNotificationService, never()).sendFullPaymentEmail(any(Bill.class));
+        verify(notificationService, never()).ensureFullPaymentNotificationExists(any(Bill.class));
     }
 
     private Bill buildBill() {
