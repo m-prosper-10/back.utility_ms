@@ -90,4 +90,6 @@ public class Bill extends AuditableEntity {
     private User approvedBy;
 
     private LocalDateTime approvedAt;
+
+    private LocalDateTime reminderSentAt;
 }
