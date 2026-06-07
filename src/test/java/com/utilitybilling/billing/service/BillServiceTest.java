@@ -92,11 +92,6 @@ class BillServiceTest {
             bill.setId(1L);
             return bill;
         });
-        when(billRepository.save(any(Bill.class))).thenAnswer(invocation -> {
-            Bill bill = invocation.getArgument(0);
-            bill.setId(1L);
-            return bill;
-        });
 
         BillResponse response = billService.generateBill(new BillRequest(1L, FUTURE_DUE_DATE));
 
@@ -118,11 +113,6 @@ class BillServiceTest {
             .thenReturn(tariff);
         when(billRepository.existsByBillReference(org.mockito.ArgumentMatchers.anyString())).thenReturn(false);
         when(billRepository.saveAndFlush(any(Bill.class))).thenAnswer(invocation -> {
-            Bill bill = invocation.getArgument(0);
-            bill.setId(2L);
-            return bill;
-        });
-        when(billRepository.save(any(Bill.class))).thenAnswer(invocation -> {
             Bill bill = invocation.getArgument(0);
             bill.setId(2L);
             return bill;
