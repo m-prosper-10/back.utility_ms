@@ -57,7 +57,7 @@ public class NotificationController {
     @PatchMapping("/api/notifications/{id}/mark-sent")
     public ResponseEntity<ApiResponse<NotificationResponse>> markSent(@PathVariable Long id) {
         return ResponseEntity.ok(
-            ApiResponse.success("Notification marked as sent", notificationService.markSent(id))
+                ApiResponse.success("Notification marked as sent", notificationService.markSent(id))
         );
     }
 }

@@ -12,6 +12,7 @@ import com.utilitybilling.common.exception.NotFoundException;
 import com.utilitybilling.customer.entity.Customer;
 import com.utilitybilling.customer.repository.CustomerRepository;
 import com.utilitybilling.notification.service.EmailNotificationService;
+import com.utilitybilling.notification.service.NotificationService;
 import com.utilitybilling.reading.entity.MeterReading;
 import com.utilitybilling.reading.repository.MeterReadingRepository;
 import com.utilitybilling.tariff.entity.Tariff;
@@ -27,6 +28,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class BillService {
 
+    private static final Logger log = LoggerFactory.getLogger(BillService.class);
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
     private static final AtomicInteger BILL_SEQUENCE = new AtomicInteger(1);
 
@@ -44,6 +48,7 @@ public class BillService {
     private final UserRepository userRepository;
     private final TariffService tariffService;
     private final EmailNotificationService emailNotificationService;
+    private final NotificationService notificationService;
 
     @Transactional
     public BillResponse generateBill(BillRequest request) {
@@ -93,9 +98,16 @@ public class BillService {
         bill.setStatus(BillStatus.GENERATED);
         bill.setDueDate(request.dueDate());
 
-        emailNotificationService.sendBillProcessedEmail(bill);
+        try {
+            emailNotificationService.sendBillProcessedEmail(bill);
+        } catch (RuntimeException ex) {
+            log.warn("Bill processed email failed for bill {}", bill.getBillReference(), ex);
+        }
 
-        return toResponse(billRepository.save(bill));
+        Bill savedBill = billRepository.saveAndFlush(bill);
+        notificationService.ensureBillProcessedNotificationExists(savedBill);
+
+        return toResponse(savedBill);
     }
 
     @Transactional(readOnly = true)
