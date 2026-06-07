@@ -8,6 +8,7 @@ import com.utilitybilling.common.exception.NotFoundException;
 import com.utilitybilling.customer.entity.Customer;
 import com.utilitybilling.customer.repository.CustomerRepository;
 import com.utilitybilling.notification.service.EmailNotificationService;
+import com.utilitybilling.notification.service.NotificationService;
 import com.utilitybilling.payment.dto.PaymentRequest;
 import com.utilitybilling.payment.dto.PaymentResponse;
 import com.utilitybilling.payment.entity.Payment;
@@ -19,6 +20,8 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,11 +30,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PaymentService {
 
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+
     private final PaymentRepository paymentRepository;
     private final BillRepository billRepository;
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
     private final EmailNotificationService emailNotificationService;
+    private final NotificationService notificationService;
 
     @Transactional
     public PaymentResponse recordPayment(PaymentRequest request) {
@@ -71,13 +77,20 @@ public class PaymentService {
         bill.setAmountPaid(newAmountPaid);
         bill.setOutstandingBalance(newOutstanding);
         if (newOutstanding.compareTo(BigDecimal.ZERO) == 0) {
-            emailNotificationService.sendFullPaymentEmail(bill);
+            try {
+                emailNotificationService.sendFullPaymentEmail(bill);
+            } catch (RuntimeException ex) {
+                log.warn("Full payment email failed for bill {}", bill.getBillReference(), ex);
+            }
             bill.setStatus(BillStatus.PAID);
         } else {
             bill.setStatus(BillStatus.PARTIALLY_PAID);
         }
 
-        billRepository.save(bill);
+        Bill savedBill = billRepository.saveAndFlush(bill);
+        if (savedBill.getStatus() == BillStatus.PAID) {
+            notificationService.ensureFullPaymentNotificationExists(savedBill);
+        }
         Payment savedPayment = paymentRepository.save(payment);
 
         return toResponse(savedPayment);

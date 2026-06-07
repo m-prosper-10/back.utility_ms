@@ -5,8 +5,6 @@ import com.utilitybilling.common.exception.BadRequestException;
 import com.utilitybilling.customer.entity.Customer;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -19,6 +17,7 @@ import org.springframework.util.StringUtils;
 public class EmailNotificationService {
 
     private final JavaMailSender mailSender;
+    private final NotificationService notificationService;
 
     @Value("${app.notifications.email.enabled:true}")
     private boolean emailEnabled;
@@ -30,13 +29,7 @@ public class EmailNotificationService {
         sendEmail(
             bill,
             "Utility bill processed - %s".formatted(bill.getBillReference()),
-            "Dear %s,%nYour %02d/%d utility bill of %s FRW has been successfully processed."
-                .formatted(
-                    bill.getCustomer().getFullName(),
-                    bill.getBillingMonth(),
-                    bill.getBillingYear(),
-                    formatAmount(bill.getTotalAmount())
-                )
+            notificationService.buildBillProcessedMessage(bill)
         );
     }
 
@@ -44,13 +37,28 @@ public class EmailNotificationService {
         sendEmail(
             bill,
             "Utility bill fully paid - %s".formatted(bill.getBillReference()),
-            "Dear %s,%nYour %02d/%d utility bill of %s FRW has been fully paid."
+            notificationService.buildFullPaymentMessage(bill)
+        );
+    }
+
+    public void sendDueDateReminderEmail(Bill bill) {
+        sendEmail(
+            bill,
+            "Utility bill reminder - %s".formatted(bill.getBillReference()),
+            """
+            Dear %s,
+            This is a reminder that your %02d/%d utility bill of %s FRW is due on %s.
+            Your current outstanding balance is %s FRW.
+            """
                 .formatted(
                     bill.getCustomer().getFullName(),
                     bill.getBillingMonth(),
                     bill.getBillingYear(),
-                    formatAmount(bill.getTotalAmount())
+                    bill.getTotalAmount().toPlainString(),
+                    bill.getDueDate(),
+                    bill.getOutstandingBalance().toPlainString()
                 )
+                .trim()
         );
     }
 
@@ -82,7 +90,4 @@ public class EmailNotificationService {
         }
     }
 
-    private String formatAmount(BigDecimal amount) {
-        return new DecimalFormat("0.##").format(amount);
-    }
 }

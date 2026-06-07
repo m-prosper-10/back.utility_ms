@@ -28,26 +28,50 @@ public class NotificationService {
 
     @Transactional
     public Notification createBillProcessedNotification(Bill bill) {
-        String message = "Dear %s,%nYour %02d/%d utility bill of %s FRW has been successfully processed."
-            .formatted(
-                bill.getCustomer().getFullName(),
-                bill.getBillingMonth(),
-                bill.getBillingYear(),
-                formatAmount(bill.getTotalAmount())
-            );
-        return createNotification(bill.getCustomer(), bill, message);
+        return createNotification(bill.getCustomer(), bill, buildBillProcessedMessage(bill));
     }
 
     @Transactional
     public Notification createFullPaymentNotification(Bill bill) {
-        String message = "Dear %s,%nYour %02d/%d utility bill of %s FRW has been fully paid."
+        return createNotification(bill.getCustomer(), bill, buildFullPaymentMessage(bill));
+    }
+
+    @Transactional
+    public void ensureFullPaymentNotificationExists(Bill bill) {
+        String message = buildFullPaymentMessage(bill);
+        if (notificationRepository.existsByBillAndMessage(bill, message)) {
+            return;
+        }
+        createNotification(bill.getCustomer(), bill, message);
+    }
+
+    @Transactional
+    public void ensureBillProcessedNotificationExists(Bill bill) {
+        String message = buildBillProcessedMessage(bill);
+        if (notificationRepository.existsByBillAndMessage(bill, message)) {
+            return;
+        }
+        createNotification(bill.getCustomer(), bill, message);
+    }
+
+    public String buildBillProcessedMessage(Bill bill) {
+        return "Dear %s,%nYour %02d/%d utility bill of %s FRW has been successfully processed."
             .formatted(
                 bill.getCustomer().getFullName(),
                 bill.getBillingMonth(),
                 bill.getBillingYear(),
                 formatAmount(bill.getTotalAmount())
             );
-        return createNotification(bill.getCustomer(), bill, message);
+    }
+
+    public String buildFullPaymentMessage(Bill bill) {
+        return "Dear %s,%nYour %02d/%d utility bill of %s FRW has been fully paid."
+            .formatted(
+                bill.getCustomer().getFullName(),
+                bill.getBillingMonth(),
+                bill.getBillingYear(),
+                formatAmount(bill.getTotalAmount())
+            );
     }
 
     @Transactional(readOnly = true)
