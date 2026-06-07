@@ -2,6 +2,7 @@ package com.utilitybilling.billing.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +18,7 @@ import com.utilitybilling.common.enums.TariffType;
 import com.utilitybilling.common.exception.BadRequestException;
 import com.utilitybilling.customer.entity.Customer;
 import com.utilitybilling.customer.repository.CustomerRepository;
+import com.utilitybilling.notification.service.EmailNotificationService;
 import com.utilitybilling.meter.entity.Meter;
 import com.utilitybilling.reading.entity.MeterReading;
 import com.utilitybilling.reading.repository.MeterReadingRepository;
@@ -54,6 +56,9 @@ class BillServiceTest {
     @Mock
     private TariffService tariffService;
 
+    @Mock
+    private EmailNotificationService emailNotificationService;
+
     @InjectMocks
     private BillService billService;
 
@@ -89,6 +94,7 @@ class BillServiceTest {
         assertEquals(BigDecimal.valueOf(15000.00).setScale(2), response.amountBeforeTax());
         assertEquals(BigDecimal.valueOf(2880.00).setScale(2), response.taxAmount());
         assertEquals(BigDecimal.valueOf(18880.00).setScale(2), response.totalAmount());
+        verify(emailNotificationService).sendBillProcessedEmail(any(Bill.class));
     }
 
     @Test
@@ -112,12 +118,14 @@ class BillServiceTest {
         assertEquals(BigDecimal.valueOf(6000.00).setScale(2), response.amountBeforeTax());
         assertEquals(BigDecimal.valueOf(1260.00).setScale(2), response.taxAmount());
         assertEquals(BigDecimal.valueOf(8260.00).setScale(2), response.totalAmount());
+        verify(emailNotificationService).sendBillProcessedEmail(any(Bill.class));
     }
 
     private MeterReading buildReading(BigDecimal consumption, AccountStatus customerStatus) {
         Customer customer = new Customer();
         customer.setId(1L);
         customer.setFullName("Mugisha Prosper");
+        customer.setEmail("prosper@example.com");
         customer.setStatus(customerStatus);
 
         Meter meter = new Meter();
@@ -132,6 +140,7 @@ class BillServiceTest {
         reading.setMeter(meter);
         reading.setBillingMonth(6);
         reading.setBillingYear(2026);
+        reading.setReadingDate(LocalDate.of(2026, 6, 5));
         reading.setConsumption(consumption.setScale(2));
         return reading;
     }

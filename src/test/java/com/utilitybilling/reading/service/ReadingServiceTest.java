@@ -44,7 +44,7 @@ class ReadingServiceTest {
             1L,
             BigDecimal.valueOf(120),
             BigDecimal.valueOf(150),
-            LocalDate.now(),
+            LocalDate.of(2026, 6, 7),
             6,
             2026
         );
@@ -76,7 +76,7 @@ class ReadingServiceTest {
 
         ReadingResponse response = readingService.captureReading(request);
 
-        assertEquals(BigDecimal.valueOf(30), response.consumption());
+        assertEquals(BigDecimal.valueOf(30).setScale(2), response.consumption());
     }
 
     private Meter buildMeter(MeterStatus status) {

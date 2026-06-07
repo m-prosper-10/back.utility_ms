@@ -7,6 +7,7 @@ import com.utilitybilling.common.exception.BadRequestException;
 import com.utilitybilling.common.exception.NotFoundException;
 import com.utilitybilling.customer.entity.Customer;
 import com.utilitybilling.customer.repository.CustomerRepository;
+import com.utilitybilling.notification.service.EmailNotificationService;
 import com.utilitybilling.payment.dto.PaymentRequest;
 import com.utilitybilling.payment.dto.PaymentResponse;
 import com.utilitybilling.payment.entity.Payment;
@@ -30,6 +31,7 @@ public class PaymentService {
     private final BillRepository billRepository;
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
+    private final EmailNotificationService emailNotificationService;
 
     @Transactional
     public PaymentResponse recordPayment(PaymentRequest request) {
@@ -69,6 +71,7 @@ public class PaymentService {
         bill.setAmountPaid(newAmountPaid);
         bill.setOutstandingBalance(newOutstanding);
         if (newOutstanding.compareTo(BigDecimal.ZERO) == 0) {
+            emailNotificationService.sendFullPaymentEmail(bill);
             bill.setStatus(BillStatus.PAID);
         } else {
             bill.setStatus(BillStatus.PARTIALLY_PAID);
